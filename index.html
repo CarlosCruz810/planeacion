@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planeador Semanal NEM</title>
+  <title>Planeador Semanal NEM - ACUDE</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 md:p-8">
   <div class="max-w-6xl mx-auto">
     <header class="bg-white rounded-3xl shadow p-6 mb-6">
       <h1 class="text-4xl font-bold text-slate-800">Planeador Semanal NEM</h1>
+      <p class="text-blue-700 font-semibold mt-2">ACUDE: Centro de Capacitación y Desarrollo Integral</p>
       <p class="text-slate-600 mt-2">Genera tus planeaciones semanales basadas en la Nueva Escuela Mexicana.</p>
     </header>
 
@@ -68,35 +69,15 @@
   </div>
 
   <script>
-    const nombresDias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-    const contenedor = document.getElementById('dias');
-
-    function crearDia(nombre = '') {
-      const div = document.createElement('section');
-      div.className = 'bg-white rounded-3xl shadow p-6 mb-6';
-      div.innerHTML = `
-        <h2 class="text-2xl font-semibold mb-4">${nombre || 'Sesión'}</h2>
-        <div class="space-y-4">
-          <input class="border rounded-xl p-3 w-full dia-nombre" placeholder="Día" value="${nombre}">
-          <textarea class="border rounded-xl p-3 w-full" rows="3" placeholder="Inicio"></textarea>
-          <textarea class="border rounded-xl p-3 w-full" rows="4" placeholder="Desarrollo"></textarea>
-          <textarea class="border rounded-xl p-3 w-full" rows="3" placeholder="Cierre"></textarea>
-          <textarea class="border rounded-xl p-3 w-full" rows="2" placeholder="Recursos y Materiales"></textarea>
-          <textarea class="border rounded-xl p-3 w-full" rows="2" placeholder="Evaluación del Día"></textarea>
-        </div>
-      `;
-      contenedor.appendChild(div);
-    }
-
-    function agregarDia() {
-      crearDia('');
-    }
-
-    // CONFIGURACIÓN:
-    // 1. Crea un Google Apps Script conectado a una hoja de cálculo.
-    // 2. Publica el script como Web App.
-    // 3. Pega aquí la URL del Web App.
+    // URL de tu Google Apps Script (reemplaza cuando lo tengas publicado)
     const WEBHOOK_URL = 'PEGA_AQUI_TU_URL_DE_GOOGLE_APPS_SCRIPT';
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
 
     function recopilarDatos() {
       const datos = {
@@ -134,7 +115,7 @@
 
     async function enviarPlaneacion() {
       if (!WEBHOOK_URL || WEBHOOK_URL.includes('PEGA_AQUI')) {
-        alert('Primero debes configurar la URL del Google Apps Script.');
+        alert('Debes pegar la URL de tu Google Apps Script en la constante WEBHOOK_URL.');
         return;
       }
 
@@ -143,22 +124,49 @@
       try {
         const response = await fetch(WEBHOOK_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(datos)
         });
 
-        const resultado = await response.text();
+        const texto = await response.text();
+        if (!response.ok) throw new Error(texto || 'Error desconocido');
+
         alert('Planeación enviada correctamente.');
-        console.log(resultado);
+        console.log(texto);
       } catch (error) {
         console.error(error);
-        alert('Ocurrió un error al enviar la planeación.');
+        alert('Error al enviar la planeación: ' + error.message);
       }
+    }
+
+    const nombresDias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const contenedor = document.getElementById('dias');
+
+    function crearDia(nombre = '') {
+      const div = document.createElement('section');
+      div.className = 'bg-white rounded-3xl shadow p-6 mb-6';
+      div.innerHTML = `
+        <h2 class="text-2xl font-semibold mb-4">${nombre || 'Sesión'}</h2>
+        <div class="space-y-4">
+          <input class="border rounded-xl p-3 w-full dia-nombre" placeholder="Día" value="${nombre}">
+          <textarea class="border rounded-xl p-3 w-full" rows="3" placeholder="Inicio"></textarea>
+          <textarea class="border rounded-xl p-3 w-full" rows="4" placeholder="Desarrollo"></textarea>
+          <textarea class="border rounded-xl p-3 w-full" rows="3" placeholder="Cierre"></textarea>
+          <textarea class="border rounded-xl p-3 w-full" rows="2" placeholder="Recursos y Materiales"></textarea>
+          <textarea class="border rounded-xl p-3 w-full" rows="2" placeholder="Evaluación del Día"></textarea>
+        </div>
+      `;
+      contenedor.appendChild(div);
+    }
+
+    function agregarDia() {
+      crearDia('');
     }
 
     function guardarJSON() {
 
-      const datos = recopilarDatos();
+      const datos = {
+        escuela: document.getElementById('escuela').value,
         docente: document.getElementById('docente').value,
         grado: document.getElementById('grado').value,
         grupo: document.getElementById('grupo').value,
@@ -193,47 +201,42 @@
         'Día','Inicio','Desarrollo','Cierre','Recursos','Evaluación'
       ];
 
-      const base = {
-        docente: document.getElementById('docente').value,
-        escuela: document.getElementById('escuela').value,
-        grado: document.getElementById('grado').value,
-        grupo: document.getElementById('grupo').value,
-        proyecto: document.getElementById('proyecto').value,
-        semana: document.getElementById('semana').value,
-        periodo: document.getElementById('periodo').value,
-        campoFormativo: document.getElementById('campoFormativo').value,
-        ejeArticulador: document.getElementById('ejeArticulador').value,
-        metodologia: document.getElementById('metodologia').value,
-        contenido: document.getElementById('contenido').value,
-        pda: document.getElementById('pda').value,
-        objetivo: document.getElementById('objetivo').value,
-      };
-
+      const datos = recopilarDatos();
       const filas = [];
-      document.querySelectorAll('#dias section').forEach((section) => {
-        const campos = section.querySelectorAll('input, textarea');
+
+      if (datos.sesiones.length === 0) {
         filas.push([
-          base.docente,
-          base.escuela,
-          base.grado,
-          base.grupo,
-          base.proyecto,
-          base.semana,
-          base.periodo,
-          base.campoFormativo,
-          base.ejeArticulador,
-          base.metodologia,
-          base.contenido,
-          base.pda,
-          base.objetivo,
-          campos[0]?.value || '',
-          campos[1]?.value || '',
-          campos[2]?.value || '',
-          campos[3]?.value || '',
-          campos[4]?.value || '',
-          campos[5]?.value || ''
+          datos.docente, datos.escuela, datos.grado, datos.grupo,
+          datos.proyecto, datos.semana, datos.periodo,
+          datos.campoFormativo, datos.ejeArticulador, datos.metodologia,
+          datos.contenido, datos.pda, datos.objetivo,
+          '', '', '', '', '', ''
         ]);
-      });
+      } else {
+        datos.sesiones.forEach((sesion) => {
+          filas.push([
+            datos.docente,
+            datos.escuela,
+            datos.grado,
+            datos.grupo,
+            datos.proyecto,
+            datos.semana,
+            datos.periodo,
+            datos.campoFormativo,
+            datos.ejeArticulador,
+            datos.metodologia,
+            datos.contenido,
+            datos.pda,
+            datos.objetivo,
+            sesion.dia,
+            sesion.inicio,
+            sesion.desarrollo,
+            sesion.cierre,
+            sesion.recursos,
+            sesion.evaluacion
+          ]);
+        });
+      }
 
       let html = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -244,29 +247,15 @@
           <style>
             body { font-family: Calibri, Arial, sans-serif; }
             table { border-collapse: collapse; width: 100%; }
-            th {
-              background: #1d4ed8;
-              color: white;
-              font-weight: bold;
-              text-align: center;
-              border: 1px solid #cbd5e1;
-              padding: 8px;
-            }
-            td {
-              border: 1px solid #cbd5e1;
-              padding: 6px;
-              vertical-align: top;
-              white-space: pre-wrap;
-            }
-            tr:nth-child(even) td {
-              background: #f8fafc;
-            }
+            th { background: #1d4ed8; color: white; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px; }
+            td { border: 1px solid #cbd5e1; padding: 6px; vertical-align: top; white-space: pre-wrap; }
+            tr:nth-child(even) td { background: #f8fafc; }
           </style>
         </head>
         <body>
           <table>
-            <tr>${encabezados.map(h => `<th>${h}</th>`).join('')}</tr>
-            ${filas.map(f => `<tr>${f.map(c => `<td>${(c || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>`).join('')}</tr>`).join('')}
+            <tr>${encabezados.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>
+            ${filas.map(f => `<tr>${f.map(c => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}
           </table>
         </body>
         </html>`;
@@ -282,5 +271,6 @@
   </script>
 </body>
 </html>
+
 
 

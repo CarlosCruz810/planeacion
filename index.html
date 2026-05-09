@@ -16,7 +16,7 @@
     <section class="bg-white rounded-3xl shadow p-6 mb-6">
       <h2 class="text-2xl font-semibold mb-4">Datos Generales</h2>
       <div class="grid md:grid-cols-3 gap-4">
-        <input id="escuela" class="border rounded-xl p-3" placeholder="Escuela" value="ACUDE_ Centro de Capacitación y Desarrollo Integral">
+        <input id="escuela" class="border rounded-xl p-3" placeholder="Escuela" value="Instituto Livier">
         <input id="docente" class="border rounded-xl p-3" placeholder="Docente">
         <input id="grado" class="border rounded-xl p-3" placeholder="Grado">
         <input id="grupo" class="border rounded-xl p-3" placeholder="Grupo">
@@ -59,8 +59,10 @@
     <div id="dias"></div>
 
     <div class="flex flex-wrap gap-3 mb-6">
+      <button onclick="enviarPlaneacion()" class="bg-purple-700 text-white px-5 py-3 rounded-xl">Enviar al Director</button>
       <button onclick="agregarDia()" class="bg-blue-600 text-white px-5 py-3 rounded-xl">Agregar sesión</button>
       <button onclick="guardarJSON()" class="bg-emerald-600 text-white px-5 py-3 rounded-xl">Guardar JSON</button>
+      <button onclick="exportarExcel()" class="bg-green-700 text-white px-5 py-3 rounded-xl">Exportar a Excel</button>
       <button onclick="window.print()" class="bg-slate-700 text-white px-5 py-3 rounded-xl">Imprimir</button>
     </div>
   </div>
@@ -90,9 +92,73 @@
       crearDia('');
     }
 
-    function guardarJSON() {
+    // CONFIGURACIÓN:
+    // 1. Crea un Google Apps Script conectado a una hoja de cálculo.
+    // 2. Publica el script como Web App.
+    // 3. Pega aquí la URL del Web App.
+    const WEBHOOK_URL = 'PEGA_AQUI_TU_URL_DE_GOOGLE_APPS_SCRIPT';
+
+    function recopilarDatos() {
       const datos = {
         escuela: document.getElementById('escuela').value,
+        docente: document.getElementById('docente').value,
+        grado: document.getElementById('grado').value,
+        grupo: document.getElementById('grupo').value,
+        semana: document.getElementById('semana').value,
+        periodo: document.getElementById('periodo').value,
+        proyecto: document.getElementById('proyecto').value,
+        campoFormativo: document.getElementById('campoFormativo').value,
+        ejeArticulador: document.getElementById('ejeArticulador').value,
+        metodologia: document.getElementById('metodologia').value,
+        contenido: document.getElementById('contenido').value,
+        pda: document.getElementById('pda').value,
+        objetivo: document.getElementById('objetivo').value,
+        fechaEnvio: new Date().toLocaleString('es-MX'),
+        sesiones: []
+      };
+
+      document.querySelectorAll('#dias section').forEach((section) => {
+        const campos = section.querySelectorAll('input, textarea');
+        datos.sesiones.push({
+          dia: campos[0]?.value || '',
+          inicio: campos[1]?.value || '',
+          desarrollo: campos[2]?.value || '',
+          cierre: campos[3]?.value || '',
+          recursos: campos[4]?.value || '',
+          evaluacion: campos[5]?.value || ''
+        });
+      });
+
+      return datos;
+    }
+
+    async function enviarPlaneacion() {
+      if (!WEBHOOK_URL || WEBHOOK_URL.includes('PEGA_AQUI')) {
+        alert('Primero debes configurar la URL del Google Apps Script.');
+        return;
+      }
+
+      const datos = recopilarDatos();
+
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        const resultado = await response.text();
+        alert('Planeación enviada correctamente.');
+        console.log(resultado);
+      } catch (error) {
+        console.error(error);
+        alert('Ocurrió un error al enviar la planeación.');
+      }
+    }
+
+    function guardarJSON() {
+
+      const datos = recopilarDatos();
         docente: document.getElementById('docente').value,
         grado: document.getElementById('grado').value,
         grupo: document.getElementById('grupo').value,
@@ -141,5 +207,80 @@
         contenido: document.getElementById('contenido').value,
         pda: document.getElementById('pda').value,
         objetivo: document.getElementById('objetivo').value,
+      };
+
+      const filas = [];
+      document.querySelectorAll('#dias section').forEach((section) => {
+        const campos = section.querySelectorAll('input, textarea');
+        filas.push([
+          base.docente,
+          base.escuela,
+          base.grado,
+          base.grupo,
+          base.proyecto,
+          base.semana,
+          base.periodo,
+          base.campoFormativo,
+          base.ejeArticulador,
+          base.metodologia,
+          base.contenido,
+          base.pda,
+          base.objetivo,
+          campos[0]?.value || '',
+          campos[1]?.value || '',
+          campos[2]?.value || '',
+          campos[3]?.value || '',
+          campos[4]?.value || '',
+          campos[5]?.value || ''
+        ]);
+      });
+
+      let html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:x="urn:schemas-microsoft-com:office:excel"
+              xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Calibri, Arial, sans-serif; }
+            table { border-collapse: collapse; width: 100%; }
+            th {
+              background: #1d4ed8;
+              color: white;
+              font-weight: bold;
+              text-align: center;
+              border: 1px solid #cbd5e1;
+              padding: 8px;
+            }
+            td {
+              border: 1px solid #cbd5e1;
+              padding: 6px;
+              vertical-align: top;
+              white-space: pre-wrap;
+            }
+            tr:nth-child(even) td {
+              background: #f8fafc;
+            }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr>${encabezados.map(h => `<th>${h}</th>`).join('')}</tr>
+            ${filas.map(f => `<tr>${f.map(c => `<td>${(c || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>`).join('')}</tr>`).join('')}
+          </table>
+        </body>
+        </html>`;
+
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Planeacion_${base.docente || 'NEM'}_${base.semana || 'Semanal'}.xls`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
 </html>
+
 

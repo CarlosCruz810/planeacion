@@ -1,269 +1,62 @@
-import React, { useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Printer, Plus, Trash2 } from "lucide-react";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planeador Semanal NEM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8">
+  <div class="max-w-6xl mx-auto">
+    <header class="bg-white rounded-3xl shadow p-6 mb-6">
+      <h1 class="text-4xl font-bold text-slate-800">Planeador Semanal NEM</h1>
+      <p class="text-slate-600 mt-2">Genera tus planeaciones semanales basadas en la Nueva Escuela Mexicana.</p>
+    </header>
 
-const camposFormativos = [
-  "Lenguajes",
-  "Saberes y Pensamiento Científico",
-  "Ética, Naturaleza y Sociedades",
-  "De lo Humano y lo Comunitario",
-];
-
-const ejesArticuladores = [
-  "Inclusión",
-  "Pensamiento Crítico",
-  "Interculturalidad Crítica",
-  "Igualdad de Género",
-  "Vida Saludable",
-  "Apropiación de las Culturas",
-  "Artes y Experiencias Estéticas",
-  "Lectura y Escritura",
-];
-
-const nuevoDia = () => ({
-  dia: "",
-  inicio: "",
-  desarrollo: "",
-  cierre: "",
-  recursos: "",
-  evaluacion: "",
-});
-
-export default function PlaneadorNEM() {
-  const [datos, setDatos] = useState({
-    escuela: "Instituto Livier",
-    docente: "",
-    grado: "",
-    grupo: "",
-    semana: "",
-    periodo: "",
-    proyecto: "",
-    campoFormativo: "",
-    ejeArticulador: "",
-    contenido: "",
-    pda: "",
-    metodologia: "Aprendizaje Basado en Proyectos Comunitarios",
-    objetivo: "",
-    evaluacionGeneral: "",
-    observaciones: "",
-  });
-
-  const [dias, setDias] = useState([
-    { ...nuevoDia(), dia: "Lunes" },
-    { ...nuevoDia(), dia: "Martes" },
-    { ...nuevoDia(), dia: "Miércoles" },
-    { ...nuevoDia(), dia: "Jueves" },
-    { ...nuevoDia(), dia: "Viernes" },
-  ]);
-
-  const actualizarDato = (campo, valor) => {
-    setDatos((prev) => ({ ...prev, [campo]: valor }));
-  };
-
-  const actualizarDia = (index, campo, valor) => {
-    const copia = [...dias];
-    copia[index][campo] = valor;
-    setDias(copia);
-  };
-
-  const agregarDia = () => setDias([...dias, nuevoDia()]);
-
-  const eliminarDia = (index) => {
-    if (dias.length <= 1) return;
-    setDias(dias.filter((_, i) => i !== index));
-  };
-
-  const exportarJSON = () => {
-    const contenido = JSON.stringify({ datos, dias }, null, 2);
-    const blob = new Blob([contenido], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `planeacion_${datos.semana || "semanal"}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const resumen = useMemo(() => {
-    return `Planeación semanal del ${datos.periodo || "periodo no definido"} para ${datos.grado || "grado"} ${datos.grupo || ""}.`;
-  }, [datos]);
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900">Planeador Semanal NEM</h1>
-            <p className="text-slate-600 mt-1">Genera tus planeaciones alineadas con la Nueva Escuela Mexicana.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="w-4 h-4 mr-2" /> Imprimir
-            </Button>
-            <Button onClick={exportarJSON}>
-              <Download className="w-4 h-4 mr-2" /> Guardar
-            </Button>
-          </div>
-        </div>
-
-        <Card className="rounded-2xl shadow-sm">
-          <CardHeader>
-            <CardTitle>Datos Generales</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              ["escuela", "Escuela"],
-              ["docente", "Docente"],
-              ["grado", "Grado"],
-              ["grupo", "Grupo"],
-              ["semana", "Semana"],
-              ["periodo", "Periodo (ej. 12 al 16 de mayo)"]
-            ].map(([campo, label]) => (
-              <div key={campo}>
-                <Label>{label}</Label>
-                <Input
-                  value={datos[campo]}
-                  onChange={(e) => actualizarDato(campo, e.target.value)}
-                />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-sm">
-          <CardHeader>
-            <CardTitle>Enfoque Pedagógico NEM</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Proyecto</Label>
-              <Input value={datos.proyecto} onChange={(e) => actualizarDato("proyecto", e.target.value)} />
-            </div>
-
-            <div>
-              <Label>Campo Formativo</Label>
-              <Select onValueChange={(v) => actualizarDato("campoFormativo", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un campo formativo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {camposFormativos.map((campo) => (
-                    <SelectItem key={campo} value={campo}>{campo}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Eje Articulador</Label>
-              <Select onValueChange={(v) => actualizarDato("ejeArticulador", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un eje articulador" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ejesArticuladores.map((eje) => (
-                    <SelectItem key={eje} value={eje}>{eje}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Metodología</Label>
-              <Input value={datos.metodologia} onChange={(e) => actualizarDato("metodologia", e.target.value)} />
-            </div>
-
-            <div className="md:col-span-2">
-              <Label>Contenido</Label>
-              <Textarea value={datos.contenido} onChange={(e) => actualizarDato("contenido", e.target.value)} />
-            </div>
-
-            <div className="md:col-span-2">
-              <Label>Proceso de Desarrollo de Aprendizaje (PDA)</Label>
-              <Textarea value={datos.pda} onChange={(e) => actualizarDato("pda", e.target.value)} />
-            </div>
-
-            <div className="md:col-span-2">
-              <Label>Objetivo de Aprendizaje</Label>
-              <Textarea value={datos.objetivo} onChange={(e) => actualizarDato("objetivo", e.target.value)} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4">
-          {dias.map((d, index) => (
-            <Card key={index} className="rounded-2xl shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{d.dia || `Sesión ${index + 1}`}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => eliminarDia(index)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Día</Label>
-                  <Input value={d.dia} onChange={(e) => actualizarDia(index, "dia", e.target.value)} />
-                </div>
-                {[
-                  ["inicio", "Inicio"],
-                  ["desarrollo", "Desarrollo"],
-                  ["cierre", "Cierre"],
-                  ["recursos", "Recursos y Materiales"],
-                  ["evaluacion", "Evaluación del Día"],
-                ].map(([campo, label]) => (
-                  <div key={campo}>
-                    <Label>{label}</Label>
-                    <Textarea
-                      value={d[campo]}
-                      onChange={(e) => actualizarDia(index, campo, e.target.value)}
-                    />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <Button variant="outline" onClick={agregarDia}>
-          <Plus className="w-4 h-4 mr-2" /> Agregar sesión
-        </Button>
-
-        <Card className="rounded-2xl shadow-sm">
-          <CardHeader>
-            <CardTitle>Evaluación General y Observaciones</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Evaluación General</Label>
-              <Textarea
-                value={datos.evaluacionGeneral}
-                onChange={(e) => actualizarDato("evaluacionGeneral", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Observaciones</Label>
-              <Textarea
-                value={datos.observaciones}
-                onChange={(e) => actualizarDato("observaciones", e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-sm border-l-4 border-l-blue-600">
-          <CardHeader>
-            <CardTitle>Resumen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-slate-700">{resumen}</p>
-          </CardContent>
-        </Card>
+    <section class="bg-white rounded-3xl shadow p-6 mb-6">
+      <h2 class="text-2xl font-semibold mb-4">Datos Generales</h2>
+      <div class="grid md:grid-cols-3 gap-4">
+        <input id="escuela" class="border rounded-xl p-3" placeholder="Escuela" value="Instituto Livier">
+        <input id="docente" class="border rounded-xl p-3" placeholder="Docente">
+        <input id="grado" class="border rounded-xl p-3" placeholder="Grado">
+        <input id="grupo" class="border rounded-xl p-3" placeholder="Grupo">
+        <input id="semana" class="border rounded-xl p-3" placeholder="Semana">
+        <input id="periodo" class="border rounded-xl p-3" placeholder="Periodo (ej. 12 al 16 de mayo)">
       </div>
-    </div>
-  );
-}
+    </section>
+
+    <section class="bg-white rounded-3xl shadow p-6 mb-6">
+      <h2 class="text-2xl font-semibold mb-4">Enfoque Pedagógico NEM</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <input id="proyecto" class="border rounded-xl p-3" placeholder="Proyecto">
+
+        <select id="campoFormativo" class="border rounded-xl p-3">
+          <option value="">Campo Formativo</option>
+          <option>Lenguajes</option>
+          <option>Saberes y Pensamiento Científico</option>
+          <option>Ética, Naturaleza y Sociedades</option>
+          <option>De lo Humano y lo Comunitario</option>
+        </select>
+
+        <select id="ejeArticulador" class="border rounded-xl p-3">
+          <option value="">Eje Articulador</option>
+          <option>Inclusión</option>
+          <option>Pensamiento Crítico</option>
+          <option>Interculturalidad Crítica</option>
+          <option>Igualdad de Género</option>
+          <option>Vida Saludable</option>
+          <option>Lectura y Escritura</option>
+        </select>
+
+        <input id="metodologia" class="border rounded-xl p-3" value="Aprendizaje Basado en Proyectos Comunitarios">
+
+        <textarea id="contenido" class="border rounded-xl p-3 md:col-span-2" rows="3" placeholder="Contenido"></textarea>
+        <textarea id="pda" class="border rounded-xl p-3 md:col-span-2" rows="3" placeholder="Proceso de Desarrollo de Aprendizaje (PDA)"></textarea>
+        <textarea id="objetivo" class="border rounded-xl p-3 md:col-span-2" rows="3" placeholder="Objetivo de Aprendizaje"></textarea>
+      </div>
+    </section>
+
+    <div id="dias"></div>
+
+    <div class="flex flex-wrap gap-3 mb-6">
+      <button
